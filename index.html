@@ -317,15 +317,14 @@
         }
 
         .menu {
-            position: absolute;
+            position: fixed;
             background: white;
             border: 1px solid rgba(17, 17, 17, 0.16);
             border-radius: 8px;
             box-shadow: 0px 12px 24px 0px rgba(16, 24, 40, 0.16), 0px 8px 8px -600px rgba(16, 24, 40, 0.16);
             min-width: 163px;
-            z-index: 9999;
+            z-index: 99999;
             overflow: hidden;
-            margin-top: 4px;
         }
 
         .menu-list {
@@ -421,6 +420,7 @@
         const SelectField = ({ label, value, options, isOpen, onToggle, onChange, disabled = false, focused = false }) => {
             const selectRef = useRef(null);
             const menuRef = useRef(null);
+            const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 0 });
 
             useEffect(() => {
                 const handleClickOutside = (event) => {
@@ -430,12 +430,30 @@
                     }
                 };
 
+                const updateMenuPosition = () => {
+                    if (selectRef.current) {
+                        const rect = selectRef.current.getBoundingClientRect();
+                        setMenuPosition({
+                            top: rect.bottom + 4,
+                            left: rect.left,
+                            width: rect.width
+                        });
+                    }
+                };
+
                 if (isOpen) {
                     document.addEventListener('mousedown', handleClickOutside);
+                    window.addEventListener('scroll', updateMenuPosition, true);
+                    window.addEventListener('resize', updateMenuPosition);
+                    
+                    // Calculate initial menu position
+                    updateMenuPosition();
                 }
 
                 return () => {
                     document.removeEventListener('mousedown', handleClickOutside);
+                    window.removeEventListener('scroll', updateMenuPosition, true);
+                    window.removeEventListener('resize', updateMenuPosition);
                 };
             }, [isOpen, onToggle]);
 
@@ -465,6 +483,11 @@
                             <div 
                                 ref={menuRef}
                                 className="menu"
+                                style={{
+                                    top: `${menuPosition.top}px`,
+                                    left: `${menuPosition.left}px`,
+                                    width: `${menuPosition.width}px`
+                                }}
                             >
                                 <div className="menu-list">
                                     {options.map((option, index) => (
