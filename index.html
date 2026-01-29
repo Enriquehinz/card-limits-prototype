@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Card Limits - Prototype</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Maison Neue', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: rgba(0, 0, 0, 0.5);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0px 12px 24px 0px rgba(16, 24, 40, 0.16);
+            max-width: 816px;
+            width: 100%;
+            min-height: 721px;
+        }
+
+        .sidebar {
+            background: #f5f5f0;
+            min-width: 216px;
+            padding: 32px 24px;
+            border-radius: 8px 0 0 8px;
+        }
+
+        .stepper {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .stepper-line {
+            width: 2px;
+            background: #111;
+            opacity: 0.13;
+            margin-right: -2px;
+        }
+
+        .step-item {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .step-indicator {
+            width: 2px;
+            height: 24px;
+            background: #111;
+        }
+
+        .step-indicator.inactive {
+            opacity: 0;
+        }
+
+        .step-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(0, 0, 0, 0.87);
+        }
+
+        .step-label.inactive {
+            color: rgba(0, 0, 0, 0.38);
+        }
+
+        .dialog {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .dialog-title {
+            padding: 16px 24px;
+        }
+
+        .dialog-title h2 {
+            font-family: 'Maison Neue', sans-serif;
+            font-size: 20px;
+            font-weight: 500;
+            line-height: 1.6;
+            color: rgba(0, 0, 0, 0.87);
+            letter-spacing: 0.15px;
+        }
+
+        .dialog-content {
+            flex: 1;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+
+        .section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title h3 {
+            font-family: 'Maison Neue', sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 1.75;
+            color: rgba(0, 0, 0, 0.87);
+            letter-spacing: 0.15px;
+        }
+
+        .info-icon {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            width: 100%;
+            flex-wrap: nowrap;
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-field.full-width {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .form-field.fixed-width {
+            width: 220px;
+            flex-shrink: 0;
+        }
+
+        .field-label {
+            font-family: 'Maison Neue', sans-serif;
+            font-size: 12px;
+            font-weight: 400;
+            line-height: 12px;
+            color: rgba(0, 0, 0, 0.6);
+            letter-spacing: 0.15px;
+            padding: 4px;
+        }
+
+        .field-label.focused {
+            color: #111;
+        }
+
+        .field-label.disabled {
+            color: rgba(0, 0, 0, 0.38);
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid rgba(0, 0, 0, 0.16);
+            border-radius: 8px;
+            font-family: 'Maison Neue', sans-serif;
+            font-size: 16px;
+            font-weight: 400;
+            line-height: 24px;
+            color: rgba(0, 0, 0, 0.87);
+            background: white;
+            min-height: 40px;
+        }
+
+        .input:focus {
+            outline: none;
+            border: 2px solid #111;
+        }
+
+        .input.disabled {
+            color: rgba(0, 0, 0, 0.38);
+        }
+
+        .select-input {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            padding-right: 40px;
+        }
+
+        .select-arrow {
+            position: absolute;
+            right: 12px;
+            width: 24px;
+            height: 24px;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .additional-limit {
+            background: #f5f5f0;
+            padding: 16px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .limit-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .limit-header h4 {
+            font-family: 'Maison Neue', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.57;
+            color: rgba(0, 0, 0, 0.87);
+            letter-spacing: 0.1px;
+        }
+
+        .add-button {
+            width: 100%;
+            padding: 6px 16px;
+            border: 1px solid rgba(17, 17, 17, 0.12);
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: 'Maison Neue', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: #111;
+            letter-spacing: 0.4px;
+            transition: background 0.2s;
+        }
+
+        .add-button:hover {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        .dialog-actions {
+            padding: 24px;
+            border-top: 1px solid rgba(0, 0, 0, 0.12);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dialog-actions-left {
+            display: flex;
+        }
+
+        .dialog-actions-right {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-button {
+            padding: 6px 8px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-family: 'Pangea', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: #111;
+            letter-spacing: 0.4px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .action-button:hover {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        .menu {
+            position: absolute;
+            background: white;
+            border: 1px solid rgba(17, 17, 17, 0.16);
+            border-radius: 8px;
+            box-shadow: 0px 12px 24px 0px rgba(16, 24, 40, 0.16), 0px 8px 8px -600px rgba(16, 24, 40, 0.16);
+            min-width: 163px;
+            z-index: 1000;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .menu-list {
+            padding: 8px 0;
+        }
+
+        .menu-item {
+            padding: 6px 16px;
+            cursor: pointer;
+            font-family: 'Maison Neue', sans-serif;
+            font-size: 16px;
+            font-weight: 400;
+            line-height: 1.5;
+            color: rgba(0, 0, 0, 0.87);
+            letter-spacing: 0.15px;
+            transition: background 0.15s;
+        }
+
+        .menu-item:hover {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        .menu-item.selected {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        .count-field {
+            transition: opacity 0.3s ease, max-height 0.3s ease, margin 0.3s ease, flex 0.3s ease;
+            opacity: 1;
+            max-height: 200px;
+            overflow: hidden;
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        .count-field.hidden {
+            opacity: 0;
+            max-height: 0;
+            margin: 0;
+            padding: 0;
+            pointer-events: none;
+            flex: 0 0 0 !important;
+            min-width: 0 !important;
+            width: 0 !important;
+            overflow: hidden;
+            border: none;
+        }
+
+        .amount-field {
+            transition: flex 0.3s ease;
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        .amount-field.expanded {
+            flex: 1 1 0 !important;
+            min-width: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+
+        const ArrowDownIcon = () => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 10L12 15L17 10H7Z" fill="rgba(0, 0, 0, 0.54)"/>
+            </svg>
+        );
+
+        const ArrowUpIcon = () => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 14L12 9L17 14H7Z" fill="rgba(0, 0, 0, 0.54)"/>
+            </svg>
+        );
+
+        const InfoIcon = () => (
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="10" cy="10" r="9" stroke="rgba(0, 0, 0, 0.54)" strokeWidth="1.5" fill="none"/>
+                <path d="M10 6V10" stroke="rgba(0, 0, 0, 0.54)" strokeWidth="1.5" strokeLinecap="round"/>
+                <circle cx="10" cy="14" r="0.5" fill="rgba(0, 0, 0, 0.54)"/>
+            </svg>
+        );
+
+        const PlusIcon = () => (
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 3V13M3 8H13" stroke="#111" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+        );
+
+        const SelectField = ({ label, value, options, isOpen, onToggle, onChange, disabled = false, focused = false }) => {
+            const selectRef = useRef(null);
+            const menuRef = useRef(null);
+
+            useEffect(() => {
+                const handleClickOutside = (event) => {
+                    if (isOpen && menuRef.current && !menuRef.current.contains(event.target) && 
+                        selectRef.current && !selectRef.current.contains(event.target)) {
+                        onToggle(false);
+                    }
+                };
+
+                if (isOpen) {
+                    document.addEventListener('mousedown', handleClickOutside);
+                }
+
+                return () => {
+                    document.removeEventListener('mousedown', handleClickOutside);
+                };
+            }, [isOpen, onToggle]);
+
+            const handleSelect = (option) => {
+                onChange(option);
+                onToggle(false);
+            };
+
+            return (
+                <div className="form-field fixed-width">
+                    <label className={`field-label ${focused ? 'focused' : ''} ${disabled ? 'disabled' : ''}`}>
+                        {label}
+                    </label>
+                    <div className="input-wrapper">
+                        <div 
+                            ref={selectRef}
+                            className={`input select-input ${disabled ? 'disabled' : ''}`}
+                            onClick={() => !disabled && onToggle(!isOpen)}
+                            style={{ border: focused ? '2px solid #111' : '1px solid rgba(0, 0, 0, 0.16)' }}
+                        >
+                            <span>{value || 'Select...'}</span>
+                            <div className="select-arrow">
+                                {isOpen ? <ArrowUpIcon /> : <ArrowDownIcon />}
+                            </div>
+                        </div>
+                        {isOpen && (
+                            <div 
+                                ref={menuRef}
+                                className="menu"
+                            >
+                                <div className="menu-list">
+                                    {options.map((option, index) => (
+                                        <div
+                                            key={index}
+                                            className={`menu-item ${value === option ? 'selected' : ''}`}
+                                            onClick={() => handleSelect(option)}
+                                        >
+                                            {option}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const TextField = ({ label, value, onChange, placeholder, disabled = false, className = '' }) => {
+            return (
+                <div className={`form-field full-width ${className}`}>
+                    <label className={`field-label ${disabled ? 'disabled' : ''}`}>
+                        {label}
+                    </label>
+                    <input
+                        type="text"
+                        className={`input ${disabled ? 'disabled' : ''}`}
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
+                        placeholder={placeholder}
+                        disabled={disabled}
+                    />
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [frequency, setFrequency] = useState('Weekly');
+            const [frequencyOpen, setFrequencyOpen] = useState(false);
+            const [amount, setAmount] = useState('');
+            const [count, setCount] = useState('∞');
+
+            const frequencyOptions = ['Per transaction', 'Daily', 'Weekly', 'Monthly', 'Quarterly', 'Annual', 'Total'];
+            const isPerTransaction = frequency === 'Per transaction';
+
+            return (
+                <div className="container">
+                    <div className="sidebar">
+                        <div className="stepper">
+                            <div style={{ display: 'flex', gap: 0 }}>
+                                <div className="stepper-line"></div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', flex: 1 }}>
+                                    <div className="step-item">
+                                        <div className="step-indicator"></div>
+                                        <span className="step-label">Step</span>
+                                    </div>
+                                    <div className="step-item">
+                                        <div className="step-indicator inactive"></div>
+                                        <span className="step-label inactive">Step</span>
+                                    </div>
+                                    <div className="step-item">
+                                        <div className="step-indicator inactive"></div>
+                                        <span className="step-label inactive">Step</span>
+                                    </div>
+                                    <div className="step-item">
+                                        <div className="step-indicator inactive"></div>
+                                        <span className="step-label inactive">Step</span>
+                                    </div>
+                                    <div className="step-item">
+                                        <div className="step-indicator inactive"></div>
+                                        <span className="step-label inactive">Step</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="dialog">
+                        <div className="dialog-title">
+                            <h2>Limits & validity</h2>
+                        </div>
+                        <div className="dialog-content">
+                            <div className="section">
+                                <div className="section-title">
+                                    <h3>Validity period</h3>
+                                </div>
+                                <div className="form-row">
+                                    <div className="form-field fixed-width">
+                                        <label className="field-label">Validity period</label>
+                                        <div className="input select-input">
+                                            <span>36 months</span>
+                                            <div className="select-arrow">
+                                                <ArrowDownIcon />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="form-field fixed-width">
+                                        <label className="field-label">Card account</label>
+                                        <div className="input select-input">
+                                            <span></span>
+                                            <div className="select-arrow">
+                                                <ArrowDownIcon />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="section">
+                                <div className="section-title">
+                                    <h3>Default Limit</h3>
+                                    <InfoIcon />
+                                </div>
+                                <div className="form-row">
+                                    <SelectField
+                                        label="Frequency"
+                                        value="Monthly"
+                                        options={frequencyOptions}
+                                        isOpen={false}
+                                        onToggle={() => {}}
+                                        onChange={() => {}}
+                                    />
+                                    <TextField
+                                        label="Amount"
+                                        value=""
+                                        onChange={() => {}}
+                                    />
+                                    <TextField
+                                        label="Count"
+                                        value="∞"
+                                        onChange={() => {}}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="section">
+                                <div className="section-title">
+                                    <h3>Additional Limits</h3>
+                                    <InfoIcon />
+                                </div>
+                                <div className="additional-limit">
+                                    <div className="limit-header">
+                                        <h4>Limit #1</h4>
+                                        <InfoIcon />
+                                    </div>
+                                    <div className="form-row">
+                                        <SelectField
+                                            label="Frequency"
+                                            value={frequency}
+                                            options={frequencyOptions}
+                                            isOpen={frequencyOpen}
+                                            onToggle={setFrequencyOpen}
+                                            onChange={setFrequency}
+                                            focused={frequencyOpen}
+                                        />
+                                        <TextField
+                                            label="Amount"
+                                            value={amount}
+                                            onChange={setAmount}
+                                            className={`amount-field ${isPerTransaction ? 'expanded' : ''}`}
+                                        />
+                                        <div className={`form-field full-width count-field ${isPerTransaction ? 'hidden' : ''}`}>
+                                            <label className="field-label">Count</label>
+                                            <input
+                                                type="text"
+                                                className="input"
+                                                value={count}
+                                                onChange={(e) => setCount(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <button className="add-button">
+                                    <PlusIcon />
+                                    <span>Add Limit</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div className="dialog-actions">
+                            <div className="dialog-actions-left">
+                                <button className="action-button">Action</button>
+                            </div>
+                            <div className="dialog-actions-right">
+                                <button className="action-button">Action</button>
+                                <button className="action-button">Action</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
+
